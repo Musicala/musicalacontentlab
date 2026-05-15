@@ -1,0 +1,20 @@
+export const CONTENT_FORMATS = [
+  "Reel",
+  "Historia",
+  "Carrusel",
+  "Short",
+  "TikTok",
+  "Video largo de YouTube",
+  "Post de Google Business Profile",
+  "Pin de Pinterest",
+  "Post de Facebook",
+  "Post institucional",
+  "Mini entrevista",
+  "Foto documental",
+  "Recap semanal",
+  "Voz en off",
+  "Antes y después",
+  "Tutorial corto",
+  "Trend adaptado",
+  "Clip testimonial"
+];
