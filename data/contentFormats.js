@@ -1,7 +1,9 @@
 export const CONTENT_FORMATS = [
+  "Paquete de contenido",
   "Reel",
   "Historia",
   "Carrusel",
+  "Publicación informativa",
   "Short",
   "TikTok",
   "Video largo de YouTube",
@@ -16,5 +18,7 @@ export const CONTENT_FORMATS = [
   "Antes y después",
   "Tutorial corto",
   "Trend adaptado",
-  "Clip testimonial"
+  "Clip testimonial",
+  "Clip documental",
+  "Banco de material"
 ];

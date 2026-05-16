@@ -1,5 +1,5 @@
 export const ROTATION_RULES = {
-  dailyTaskLimit: 4,
+  dailyTaskLimit: 6,
   requiredVariety: {
     avoidSamePillarDays: 2,
     avoidSameFormatDays: 1
@@ -17,13 +17,17 @@ export const ROTATION_RULES = {
     "Grabar voz en off con imágenes de apoyo."
   ],
   weeklyBalance: [
+    "Qué hacemos en Musicala",
+    "Sede Musicala",
     "Música",
     "Danza",
     "Teatro",
     "Artes plásticas",
     "Musicalitos",
     "Adultos aprendiendo arte",
-    "Niños y procesos artísticos"
+    "Niños y procesos artísticos",
+    "Herramientas y recursos",
+    "Metodología CREA"
   ]
 };
 
