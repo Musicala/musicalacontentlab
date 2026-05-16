@@ -1,4 +1,4 @@
-const CACHE_NAME = "musicala-content-lab-v1";
+const CACHE_NAME = "musicala-content-lab-v3";
 
 const APP_SHELL = [
   "./",
@@ -13,6 +13,7 @@ const APP_SHELL = [
   "./firebase/auth.service.js",
   "./firebase/contentTasks.service.js",
   "./firebase/contentIdeas.service.js",
+  "./firebase/contentSettings.service.js",
   "./firebase/calendar.service.js",
   "./firebase/history.service.js",
   "./ui/layout.ui.js",
@@ -23,12 +24,14 @@ const APP_SHELL = [
   "./ui/ideasBank.ui.js",
   "./ui/history.ui.js",
   "./ui/templates.ui.js",
+  "./ui/settings.ui.js",
   "./ui/modals.ui.js",
   "./data/authorizedUsers.js",
   "./data/contentObjectives.js",
   "./data/contentPillars.js",
   "./data/contentFormats.js",
   "./data/contentPlatforms.js",
+  "./data/contentMatrix.js",
   "./data/defaultDailyTemplates.js",
   "./data/defaultContentIdeas.js",
   "./data/rotationRules.js",

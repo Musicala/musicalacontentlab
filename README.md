@@ -1,6 +1,48 @@
 # Musicala Content Lab
 
-App web MVP para que Alek y Cata organicen la creación diaria de contenido de Musicala.
+App web para que Alek y Cata organicen la creación diaria de contenido de Musicala sin depender de memoria, corazonadas ni el clásico “ahorita lo hacemos”.
+
+## Qué cambió en esta versión
+
+Esta versión deja de trabajar con un día distinto para cada objetivo. Antes el sistema funcionaba como:
+
+- lunes atracción,
+- martes confianza,
+- miércoles educación,
+- jueves vida Musicala,
+- etc.
+
+Eso sonaba bonito, pero en la práctica obligaba a pensar diferente todos los días. Gran invento humano: complicarse el martes porque el lunes ya se sintió profundo.
+
+Ahora la app funciona con una **matriz diaria fija**:
+
+1. Qué hacemos en Musicala.
+2. Servicio o arte del día.
+3. Talento en acción.
+4. Proceso real de aprendizaje.
+5. Herramienta o diferencial Musicala.
+6. Invitación suave a preguntar.
+7. Plano anti-selfie del día.
+
+Cada tarea está pensada como **pieza madre**, no como una publicación aislada. Es decir, una misma captura puede convertirse en:
+
+- reel o short,
+- historias,
+- carrusel o publicación,
+- foto para Google Business Profile,
+- material reutilizable para otro día.
+
+## Cómo rota la semana
+
+Los objetivos se mantienen todos los días, pero el enfoque rota para que semanalmente haya contenido de todo:
+
+- Lunes: Musicala clara, qué hacemos, sede, modalidades.
+- Martes: música, piano, guitarra, violín, canto, batería.
+- Miércoles: danza, baile latino, urbano, ballet.
+- Jueves: artes plásticas, dibujo, pintura, escultura.
+- Viernes: diferenciales, metodología CREA, herramientas y recursos.
+- Sábado: talento real, profes, estudiantes, muestras y clases vivas.
+- Domingo: reciclaje creativo, banco de material y planeación.
 
 ## Qué incluye
 
@@ -8,11 +50,18 @@ App web MVP para que Alek y Cata organicen la creación diaria de contenido de M
 - Acceso solo para:
   - alekcaballeromusic@gmail.com
   - catalina.medina.leal@gmail.com
-- Checklist diario de contenido.
-- Generador automático de tareas según día de la semana.
+- Checklist diario basado en matriz fija.
+- Rotación semanal de artes, servicios y diferenciales.
+- Registro rápido de material ya grabado.
+- Categorías, objetivos, formatos y plataformas editables desde la vista Ajustes.
+- Metas diarias configurables.
 - Banco de ideas base según Musicala.
 - Calendario editorial de 14 días.
 - Historial creativo.
+- Evaluación simple de resultado:
+  - Funcionó,
+  - No funcionó,
+  - En prueba.
 - Estados de contenido:
   - Pendiente
   - Grabado
@@ -23,6 +72,26 @@ App web MVP para que Alek y Cata organicen la creación diaria de contenido de M
   - Omitido
   - Reprogramado
 - PWA básica con manifest y service worker.
+
+## Enfoque de uso diario
+
+La vista Hoy está pensada para abrirla y ver rápido:
+
+- qué falta grabar,
+- qué pieza madre falta capturar,
+- qué servicio o arte toca mover,
+- qué ya quedó registrado,
+- qué puede convertirse en reel, historia, carrusel o publicación.
+
+Si grabaron algo no planeado, no hace falta convertirlo primero en estrategia, campaña, funnel, ni ritual de productividad. Solo se registra en el formulario rápido como contenido grabado y luego se decide si se publica, edita, programa o recicla.
+
+## Archivos clave
+
+- `data/contentMatrix.js`: define la matriz diaria, la rotación semanal y los entregables sugeridos.
+- `data/contentObjectives.js`: define los objetivos de contenido.
+- `data/contentPillars.js`: define categorías/pilares.
+- `data/defaultContentIdeas.js`: banco base de ideas Musicala.
+- `utils/rotationEngine.js`: genera tareas diarias usando la matriz y la rotación.
 
 ## Instalación rápida
 
@@ -36,22 +105,17 @@ App web MVP para que Alek y Cata organicen la creación diaria de contenido de M
 firebase/firebase.config.js
 ```
 
-Reemplazar:
-
-```js
-apiKey: "PEGAR_API_KEY",
-authDomain: "PEGAR_AUTH_DOMAIN",
-projectId: "PEGAR_PROJECT_ID",
-storageBucket: "PEGAR_STORAGE_BUCKET",
-messagingSenderId: "PEGAR_MESSAGING_SENDER_ID",
-appId: "PEGAR_APP_ID"
-```
-
 6. Publicar las reglas de Firestore desde consola o Firebase CLI.
 
 ## Reglas de Firestore
 
-El archivo `firestore.rules` ya permite leer y escribir únicamente a los dos correos autorizados.
+El archivo `firestore.rules` permite leer y escribir únicamente a los dos correos autorizados.
+
+Colecciones usadas:
+
+- `contentTasks`
+- `contentIdeas`
+- `contentSettings`
 
 ## Probar localmente
 
@@ -63,7 +127,7 @@ Opciones:
 npx serve .
 ```
 
-o con VS Code:
+O con VS Code:
 
 ```bash
 Live Server
@@ -74,15 +138,14 @@ Live Server
 Se puede subir todo el contenido de esta carpeta a un repositorio y activar GitHub Pages.
 
 Importante:
+
 - El `firebase.config.js` debe tener los datos reales.
 - En Firebase Authentication, agregar el dominio de GitHub Pages a dominios autorizados.
 
-## Nota sobre el service worker
+## Nota sobre ajustes guardados
 
-Si actualizan archivos y GitHub Pages parece seguir mostrando versión vieja, cambien el nombre del cache en `sw.js`:
+Esta versión usa `strategyVersion: weekly-matrix-v1`. Si Firebase tenía ajustes viejos guardados, la app prioriza la nueva matriz base para que no siga cargando el modelo anterior.
 
-```js
-const CACHE_NAME = "musicala-content-lab-v2";
-```
+## Nota sobre caché / PWA
 
-Porque los navegadores aman guardar cosas viejas como si fueran recuerdos de colegio.
+Esta versión mantiene caché PWA. Si el navegador insiste en mostrar una versión vieja, desinstalen la PWA o limpien caché del sitio. Los navegadores guardan versiones antiguas con la intensidad emocional de un ex tóxico.

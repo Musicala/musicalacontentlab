@@ -9,6 +9,7 @@ import {
   updateTask
 } from "./firebase/contentTasks.service.js";
 import { createIdea, getIdeas, updateIdea } from "./firebase/contentIdeas.service.js";
+import { getContentSettings, saveContentSettings } from "./firebase/contentSettings.service.js";
 import { renderAuthView } from "./ui/auth.ui.js";
 import { renderLayout } from "./ui/layout.ui.js";
 import { renderDashboard } from "./ui/dashboard.ui.js";
@@ -16,13 +17,33 @@ import { renderCalendar } from "./ui/calendar.ui.js";
 import { renderIdeasBank } from "./ui/ideasBank.ui.js";
 import { renderHistory } from "./ui/history.ui.js";
 import { renderTemplates } from "./ui/templates.ui.js";
+import { renderSettings } from "./ui/settings.ui.js";
 import { renderIdeaModal, renderTaskModal } from "./ui/modals.ui.js";
 import { DEFAULT_CONTENT_IDEAS } from "./data/defaultContentIdeas.js";
+import { CONTENT_OBJECTIVES } from "./data/contentObjectives.js";
+import { CONTENT_PILLARS } from "./data/contentPillars.js";
+import { CONTENT_FORMATS } from "./data/contentFormats.js";
+import { CONTENT_PLATFORMS } from "./data/contentPlatforms.js";
 import { getTemplateForDate, generateTasksForDate, buildTaskFromIdea } from "./utils/rotationEngine.js";
 import { addDays, toDateInputValue } from "./utils/dates.js";
 import { escapeHTML } from "./utils/formatters.js";
 
 const appRoot = document.querySelector("#app");
+
+const SETTINGS_STRATEGY_VERSION = "weekly-matrix-v1";
+
+const DEFAULT_SETTINGS = {
+  strategyVersion: SETTINGS_STRATEGY_VERSION,
+  objectives: CONTENT_OBJECTIVES,
+  pillars: CONTENT_PILLARS,
+  formats: CONTENT_FORMATS,
+  platforms: CONTENT_PLATFORMS,
+  dailyTargets: {
+    recorded: 1,
+    published: 0,
+    pendingWarning: 3
+  }
+};
 
 const state = {
   user: null,
@@ -33,6 +54,8 @@ const state = {
   ideas: [],
   history: [],
   modalTask: null,
+  settings: structuredClone(DEFAULT_SETTINGS),
+  settingsLoaded: false,
   lastError: ""
 };
 
@@ -57,6 +80,85 @@ function showToast(message) {
 function showError(error) {
   console.error(error);
   showToast(error?.message || "Pasó algo raro. Firebase haciendo de Firebase, seguramente.");
+}
+
+function uniq(items = []) {
+  return [...new Set(items.map((item) => String(item || "").trim()).filter(Boolean))];
+}
+
+function slugify(value = "") {
+  return String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "") || "objetivo";
+}
+
+function normalizeObjectives(items = []) {
+  const list = items
+    .map((item) => {
+      if (typeof item === "string") {
+        return { id: slugify(item), name: item.trim(), description: "" };
+      }
+      return {
+        id: item.id || slugify(item.name),
+        name: item.name || item.id || "Objetivo",
+        description: item.description || ""
+      };
+    })
+    .filter((item) => item.id && item.name);
+
+  const seen = new Set();
+  return list.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
+function buildSettings(remote = null) {
+  const shouldUseRemote = remote?.strategyVersion === SETTINGS_STRATEGY_VERSION;
+  const source = shouldUseRemote ? remote : DEFAULT_SETTINGS;
+
+  return {
+    strategyVersion: SETTINGS_STRATEGY_VERSION,
+    objectives: normalizeObjectives(source?.objectives?.length ? source.objectives : DEFAULT_SETTINGS.objectives),
+    pillars: uniq(source?.pillars?.length ? source.pillars : DEFAULT_SETTINGS.pillars),
+    formats: uniq(source?.formats?.length ? source.formats : DEFAULT_SETTINGS.formats),
+    platforms: uniq(source?.platforms?.length ? source.platforms : DEFAULT_SETTINGS.platforms),
+    dailyTargets: {
+      recorded: Number(source?.dailyTargets?.recorded ?? DEFAULT_SETTINGS.dailyTargets.recorded),
+      published: Number(source?.dailyTargets?.published ?? DEFAULT_SETTINGS.dailyTargets.published),
+      pendingWarning: Number(source?.dailyTargets?.pendingWarning ?? DEFAULT_SETTINGS.dailyTargets.pendingWarning)
+    }
+  };
+}
+
+async function ensureSettings({ force = false } = {}) {
+  if (state.settingsLoaded && !force) return;
+  const remote = await getContentSettings();
+  state.settings = buildSettings(remote);
+  state.settingsLoaded = true;
+}
+
+function linesToArray(value = "") {
+  return uniq(String(value).split(/\r?\n|,/));
+}
+
+function objectivesFromTextarea(value = "") {
+  return linesToArray(value).map((name) => ({
+    id: slugify(name),
+    name,
+    description: ""
+  }));
+}
+
+function csvToArray(value = "") {
+  return String(value)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function renderShell() {
@@ -99,7 +201,7 @@ async function loadIdeas() {
 }
 
 async function loadHistory() {
-  const recent = await getRecentTasks(100);
+  const recent = await getRecentTasks(120);
   state.history = recent.filter((task) =>
     ["recorded", "edited", "scheduled", "published", "done", "skipped"].includes(task.status)
   );
@@ -110,13 +212,16 @@ async function renderCurrentView() {
   if (!root) return;
 
   try {
+    await ensureSettings();
+
     if (state.currentView === "today") {
       await loadToday();
       const template = getTemplateForDate(state.selectedDate);
       root.innerHTML = renderDashboard({
         dateString: state.selectedDate,
         tasks: state.tasksToday,
-        template
+        template,
+        settings: state.settings
       });
       return;
     }
@@ -132,7 +237,7 @@ async function renderCurrentView() {
 
     if (state.currentView === "ideas") {
       await loadIdeas();
-      root.innerHTML = renderIdeasBank({ ideas: state.ideas });
+      root.innerHTML = renderIdeasBank({ ideas: state.ideas, settings: state.settings });
       return;
     }
 
@@ -144,6 +249,11 @@ async function renderCurrentView() {
 
     if (state.currentView === "templates") {
       root.innerHTML = renderTemplates();
+      return;
+    }
+
+    if (state.currentView === "settings") {
+      root.innerHTML = renderSettings({ settings: state.settings });
       return;
     }
   } catch (error) {
@@ -190,13 +300,14 @@ function openTaskModal(task = null) {
     "beforeend",
     renderTaskModal({
       task,
-      dateString: state.selectedDate
+      dateString: state.selectedDate,
+      settings: state.settings
     })
   );
 }
 
 function openIdeaModal() {
-  document.body.insertAdjacentHTML("beforeend", renderIdeaModal());
+  document.body.insertAdjacentHTML("beforeend", renderIdeaModal({ settings: state.settings }));
 }
 
 function closeModal() {
@@ -206,13 +317,6 @@ function closeModal() {
 
 function getFormData(form) {
   return Object.fromEntries(new FormData(form).entries());
-}
-
-function csvToArray(value = "") {
-  return String(value)
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
 }
 
 async function handleTaskForm(form) {
@@ -231,20 +335,52 @@ async function handleTaskForm(form) {
     platforms: csvToArray(data.platforms),
     publishLink: data.publishLink,
     notes: data.notes,
-    status: state.modalTask?.status || "pending",
+    status: data.status || state.modalTask?.status || "pending",
+    result: data.result || state.modalTask?.result || "unknown",
     reusable: true,
     source: state.modalTask?.source || "manual"
   };
 
   if (taskId) {
     await updateTask(taskId, payload);
-    showToast("Tarea actualizada.");
+    showToast("Objetivo actualizado.");
   } else {
     await createTask(payload, state.user);
-    showToast("Tarea creada.");
+    showToast("Objetivo creado.");
   }
 
   closeModal();
+  await renderCurrentView();
+}
+
+async function handleQuickCaptureForm(form) {
+  const data = getFormData(form);
+
+  await createTask(
+    {
+      title: data.title,
+      description: "Material registrado rápidamente desde el día a día.",
+      date: state.selectedDate,
+      responsible: getUserName(),
+      objective: data.objective || "confianza",
+      pillar: data.pillar || "Vida cotidiana Musicala",
+      format: data.format || "Reel",
+      priority: "medium",
+      platforms: csvToArray(data.platforms || "Instagram, TikTok, YouTube Shorts"),
+      publishLink: "",
+      notes: data.notes || "",
+      status: "recorded",
+      result: "unknown",
+      reusable: true,
+      source: "quick-capture",
+      createdByQuickCapture: true,
+      sortOrder: 20
+    },
+    state.user
+  );
+
+  form.reset();
+  showToast("Registrado como grabado. La galería acaba de perder un fantasma.");
   await renderCurrentView();
 }
 
@@ -265,6 +401,28 @@ async function handleIdeaForm(form) {
 
   closeModal();
   showToast("Idea guardada. Una menos que se pierde en el limbo mental.");
+  await renderCurrentView();
+}
+
+async function handleSettingsForm(form) {
+  const data = getFormData(form);
+  const nextSettings = buildSettings({
+    strategyVersion: SETTINGS_STRATEGY_VERSION,
+    objectives: objectivesFromTextarea(data.objectives),
+    pillars: linesToArray(data.pillars),
+    formats: linesToArray(data.formats),
+    platforms: linesToArray(data.platforms),
+    dailyTargets: {
+      recorded: Number(data.recordedTarget || 0),
+      published: Number(data.publishedTarget || 0),
+      pendingWarning: Number(data.pendingWarning || 3)
+    }
+  });
+
+  await saveContentSettings(nextSettings, state.user);
+  state.settings = nextSettings;
+  state.settingsLoaded = true;
+  showToast("Ajustes guardados. La app ahora tiene menos excusas.");
   await renderCurrentView();
 }
 
@@ -295,7 +453,7 @@ async function convertIdeaToTask(ideaId) {
     });
   }
 
-  showToast("Idea convertida en tarea para hoy.");
+  showToast("Idea convertida en objetivo para hoy.");
   state.currentView = "today";
   renderShell();
 }
@@ -352,6 +510,14 @@ async function handleGlobalClick(event) {
       return;
     }
 
+    if (action === "reset-settings-draft") {
+      state.settings = structuredClone(DEFAULT_SETTINGS);
+      state.settingsLoaded = true;
+      await renderCurrentView();
+      showToast("Texto base restaurado en pantalla. Guarden si quieren aplicarlo.");
+      return;
+    }
+
     if (action === "open-task-modal") {
       openTaskModal();
       return;
@@ -365,6 +531,15 @@ async function handleGlobalClick(event) {
     if (action === "task-status") {
       await changeTaskStatus(button.dataset.taskId, button.dataset.status);
       showToast("Estado actualizado.");
+      await renderCurrentView();
+      return;
+    }
+
+    if (action === "task-result") {
+      await updateTask(button.dataset.taskId, {
+        result: button.dataset.result || "unknown"
+      });
+      showToast("Resultado marcado. Datos sencillos, no oráculo de marketing.");
       await renderCurrentView();
       return;
     }
@@ -429,8 +604,18 @@ async function handleGlobalSubmit(event) {
       return;
     }
 
+    if (form.dataset.form === "quick-capture") {
+      await handleQuickCaptureForm(form);
+      return;
+    }
+
     if (form.dataset.form === "idea") {
       await handleIdeaForm(form);
+      return;
+    }
+
+    if (form.dataset.form === "settings") {
+      await handleSettingsForm(form);
       return;
     }
   } catch (error) {
@@ -460,6 +645,7 @@ document.addEventListener("click", handleNavigation);
 
 listenAuth((user) => {
   state.user = user;
+  if (!user) state.settingsLoaded = false;
   renderShell();
 });
 
