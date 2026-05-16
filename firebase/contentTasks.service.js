@@ -16,16 +16,21 @@ import { db } from "./firebase.config.js";
 const COLLECTION = "contentTasks";
 
 function normalizeTask(task) {
-  return {
+  const normalized = {
     ...task,
-    platforms: Array.isArray(task.platforms)
+    updatedAt: serverTimestamp()
+  };
+
+  if (Object.prototype.hasOwnProperty.call(task, "platforms")) {
+    normalized.platforms = Array.isArray(task.platforms)
       ? task.platforms
       : String(task.platforms || "")
           .split(",")
           .map((item) => item.trim())
-          .filter(Boolean),
-    updatedAt: serverTimestamp()
-  };
+          .filter(Boolean);
+  }
+
+  return normalized;
 }
 
 export async function createTask(task, user) {
