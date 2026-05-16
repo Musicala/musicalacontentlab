@@ -10,16 +10,35 @@ export function escapeHTML(value = "") {
     .replaceAll("'", "&#039;");
 }
 
+export function humanize(value = "") {
+  const text = String(value || "")
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .trim();
+  if (!text) return "";
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 export function labelObjective(value) {
-  return OBJECTIVE_LABELS[value] || value || "Sin objetivo";
+  return OBJECTIVE_LABELS[value] || humanize(value) || "Sin objetivo";
 }
 
 export function labelStatus(value) {
-  return STATUS_LABELS[value] || value || "Pendiente";
+  return STATUS_LABELS[value] || humanize(value) || "Pendiente";
 }
 
 export function labelPriority(value) {
-  return PRIORITY_LABELS[value] || value || "Media";
+  return PRIORITY_LABELS[value] || humanize(value) || "Media";
+}
+
+export function labelResult(value) {
+  const labels = {
+    worked: "Funcionó",
+    not_worked: "No funcionó",
+    testing: "En prueba",
+    unknown: "Sin evaluar"
+  };
+  return labels[value] || labels.unknown;
 }
 
 export function listText(items = []) {
