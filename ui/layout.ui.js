@@ -5,7 +5,8 @@ export const VIEWS = [
   { id: "calendar", label: "Calendario" },
   { id: "ideas", label: "Ideas" },
   { id: "history", label: "Historial" },
-  { id: "templates", label: "Plantillas" }
+  { id: "templates", label: "Plantillas" },
+  { id: "settings", label: "Ajustes" }
 ];
 
 export function renderLayout({ user, currentView }) {

@@ -1,4 +1,4 @@
-import { escapeHTML, labelObjective, labelStatus, listText } from "../utils/formatters.js";
+import { escapeHTML, labelObjective, labelResult, labelStatus, listText } from "../utils/formatters.js";
 import { formatDateHuman, getDateRange } from "../utils/dates.js";
 
 export function renderCalendar({ startDate, tasks }) {
@@ -39,6 +39,7 @@ export function renderCalendar({ startDate, tasks }) {
                   <span class="badge">${labelStatus(task.status)}</span>
                 </div>
                 <div class="badges">
+                  <span class="badge ${task.result === "worked" ? "green" : task.result === "not_worked" ? "pink" : ""}">${labelResult(task.result)}</span>
                   <span class="badge blue">${labelObjective(task.objective)}</span>
                   <span class="badge green">${escapeHTML(task.pillar || "")}</span>
                   <span class="badge yellow">${escapeHTML(task.format || "")}</span>

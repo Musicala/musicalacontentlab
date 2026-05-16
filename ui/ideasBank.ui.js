@@ -1,15 +1,24 @@
-import { CONTENT_OBJECTIVES } from "../data/contentObjectives.js";
-import { CONTENT_PILLARS } from "../data/contentPillars.js";
 import { escapeHTML, labelObjective, listText } from "../utils/formatters.js";
 
-export function renderIdeasBank({ ideas = [] }) {
+function optionList(items = [], placeholder = "Todas") {
+  return `
+    <option value="">${placeholder}</option>
+    ${items.map((item) => {
+      const value = typeof item === "string" ? item : item.id;
+      const label = typeof item === "string" ? item : item.name;
+      return `<option value="${escapeHTML(value)}">${escapeHTML(label)}</option>`;
+    }).join("")}
+  `;
+}
+
+export function renderIdeasBank({ ideas = [], settings }) {
   return `
     <section class="hero">
       <span class="hero-kicker">Banco de ideas</span>
-      <h1>Ideas listas para convertirse en contenido</h1>
+      <h1>Ideas listas para convertirse en acciones</h1>
       <p>
-        Aquí guardan los temas que pueden alimentar reels, historias, shorts, carruseles y publicaciones.
-        Mejor esto que depender de “se me ocurrió algo bañándome y luego se me olvidó”.
+        Aquí guardan ideas de contenido por categoría y objetivo. Después se convierten en tarea para hoy,
+        porque confiar en “me acuerdo luego” es básicamente una ruleta con WiFi.
       </p>
       <div class="hero-actions">
         <button class="btn primary" data-action="open-idea-modal">Agregar idea</button>
@@ -21,24 +30,17 @@ export function renderIdeasBank({ ideas = [] }) {
       <div class="filters">
         <label class="field">
           <span>Buscar</span>
-          <input type="search" data-filter="idea-search" placeholder="Ej: danza, adultos, CREA..." />
+          <input data-filter="idea-search" placeholder="piano, adultos, backstage..." />
         </label>
         <label class="field">
           <span>Objetivo</span>
-          <select data-filter="idea-objective">
-            <option value="">Todos</option>
-            ${CONTENT_OBJECTIVES.map((item) => `<option value="${item.id}">${item.name}</option>`).join("")}
-          </select>
+          <select data-filter="idea-objective">${optionList(settings.objectives)}</select>
         </label>
         <label class="field">
-          <span>Pilar</span>
-          <select data-filter="idea-pillar">
-            <option value="">Todos</option>
-            ${CONTENT_PILLARS.map((item) => `<option value="${item}">${item}</option>`).join("")}
-          </select>
+          <span>Categoría</span>
+          <select data-filter="idea-pillar">${optionList(settings.pillars)}</select>
         </label>
-        <div class="field">
-          <span>&nbsp;</span>
+        <div class="field" style="align-self:end">
           <button class="btn secondary" data-action="apply-idea-filters">Filtrar</button>
         </div>
       </div>

@@ -1,23 +1,32 @@
-import { escapeHTML, labelObjective, labelPriority, labelStatus, listText } from "../utils/formatters.js";
+import { escapeHTML, labelObjective, labelPriority, labelResult, labelStatus, listText } from "../utils/formatters.js";
+
+const ACTIVE_STATUSES = new Set(["pending", "rescheduled"]);
 
 export function renderTaskList(tasks = []) {
   if (!tasks.length) {
     return `
       <div class="empty-state">
-        <strong>No hay tareas para hoy</strong>
-        Generen el checklist diario o creen una tarea manual. La app no adivina por telepatía, todavía.
+        <strong>No hay objetivos para hoy</strong>
+        Generen el checklist diario, creen una tarea manual o registren algo que ya grabaron. La app no adivina por telepatía, todavía.
       </div>
     `;
   }
 
+  const active = tasks.filter((task) => ACTIVE_STATUSES.has(task.status || "pending"));
+  const moved = tasks.filter((task) => !ACTIVE_STATUSES.has(task.status || "pending"));
+
   return `
     <div class="task-list">
-      ${tasks.map(renderTaskCard).join("")}
+      ${active.length ? `<h3 class="section-label">Pendiente por hacer</h3>${active.map(renderTaskCard).join("")}` : ""}
+      ${moved.length ? `<h3 class="section-label">Material movido / registrado</h3>${moved.map(renderTaskCard).join("")}` : ""}
     </div>
   `;
 }
 
 export function renderTaskCard(task) {
+  const result = task.result || "unknown";
+  const canEvaluate = ["recorded", "edited", "scheduled", "published", "done"].includes(task.status);
+
   return `
     <article class="task-card ${escapeHTML(task.status || "pending")}">
       <div class="task-top">
@@ -32,8 +41,9 @@ export function renderTaskCard(task) {
 
       <div class="badges">
         <span class="badge">${labelStatus(task.status)}</span>
+        <span class="badge ${result === "worked" ? "green" : result === "not_worked" ? "pink" : ""}">${labelResult(result)}</span>
         <span class="badge blue">${labelObjective(task.objective)}</span>
-        <span class="badge green">${escapeHTML(task.pillar || "Sin pilar")}</span>
+        <span class="badge green">${escapeHTML(task.pillar || "Sin categoría")}</span>
         <span class="badge yellow">${escapeHTML(task.format || "Sin formato")}</span>
         <span class="badge">${escapeHTML(listText(task.platforms) || "Sin plataforma")}</span>
       </div>
@@ -56,6 +66,15 @@ export function renderTaskCard(task) {
         <button class="btn small ghost" data-action="edit-task" data-task-id="${task.id}">Editar</button>
         <button class="btn small danger" data-action="delete-task" data-task-id="${task.id}">Eliminar</button>
       </div>
+
+      ${canEvaluate ? `
+        <div class="task-actions result-actions">
+          <span class="result-label">Resultado simple:</span>
+          <button class="btn small secondary" data-action="task-result" data-task-id="${task.id}" data-result="worked">Funcionó</button>
+          <button class="btn small secondary" data-action="task-result" data-task-id="${task.id}" data-result="not_worked">No funcionó</button>
+          <button class="btn small ghost" data-action="task-result" data-task-id="${task.id}" data-result="testing">En prueba</button>
+        </div>
+      ` : ""}
     </article>
   `;
 }

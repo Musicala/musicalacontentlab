@@ -1,17 +1,20 @@
-import { escapeHTML, labelObjective, labelStatus, listText } from "../utils/formatters.js";
+import { escapeHTML, labelObjective, labelResult, labelStatus, listText } from "../utils/formatters.js";
 import { formatDateHuman } from "../utils/dates.js";
 
 export function renderHistory({ items = [] }) {
   const published = items.filter((task) => task.status === "published").length;
   const recorded = items.filter((task) => task.status === "recorded").length;
   const reusable = items.filter((task) => task.reusable).length;
+  const worked = items.filter((task) => task.result === "worked").length;
+  const notWorked = items.filter((task) => task.result === "not_worked").length;
 
   return `
     <section class="hero">
       <span class="hero-kicker">Historial creativo</span>
-      <h1>Lo que ya se hizo y lo que se puede reciclar</h1>
+      <h1>Lo que se hizo, lo que sirvió y lo que se puede reciclar</h1>
       <p>
-        El historial ayuda a ver si están mostrando siempre lo mismo, o si todos los pilares de Musicala están apareciendo.
+        El historial ayuda a ver si están mostrando siempre lo mismo y si el contenido realmente funciona.
+        No lee Google Ads ni hace magia corporativa; solo registra señales simples, como debe ser cuando uno quiere avanzar sin volverse un dashboard con ego.
       </p>
       <div class="hero-actions">
         <button class="btn secondary" data-action="refresh-history">Actualizar historial</button>
@@ -24,8 +27,23 @@ export function renderHistory({ items = [] }) {
         <span>piezas movidas</span>
       </div>
       <div class="stat-card">
+        <strong>${worked}</strong>
+        <span>marcadas como funcionó</span>
+      </div>
+      <div class="stat-card">
+        <strong>${notWorked}</strong>
+        <span>marcadas como no funcionó</span>
+      </div>
+    </section>
+
+    <section class="grid three" style="margin-top:18px">
+      <div class="stat-card">
         <strong>${published}</strong>
         <span>publicadas</span>
+      </div>
+      <div class="stat-card">
+        <strong>${recorded}</strong>
+        <span>grabadas pendientes</span>
       </div>
       <div class="stat-card">
         <strong>${reusable}</strong>
@@ -51,6 +69,7 @@ export function renderHistory({ items = [] }) {
               <span class="badge">${labelStatus(item.status)}</span>
             </div>
             <div class="badges">
+              <span class="badge ${item.result === "worked" ? "green" : item.result === "not_worked" ? "pink" : ""}">${labelResult(item.result)}</span>
               <span class="badge blue">${labelObjective(item.objective)}</span>
               <span class="badge green">${escapeHTML(item.pillar || "")}</span>
               <span class="badge yellow">${escapeHTML(item.format || "")}</span>
